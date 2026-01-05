@@ -60,27 +60,33 @@ FglTFRuntimeStaticMeshContext::FglTFRuntimeStaticMeshContext(TSharedRef<FglTFRun
 #endif
 }
 
-
-void FglTFRuntimeParser::LoadStaticMeshAsync(const int32 MeshIndex, const FglTFRuntimeStaticMeshAsync& AsyncCallback, const FglTFRuntimeStaticMeshConfig& StaticMeshConfig)
+FCriticalSection StaticMeshParserCriticalSection;
+void FglTFRuntimeParser::LoadStaticMeshAsync(const int32 MeshIndex, const FglTFRuntimeStaticMeshAsync& AsyncCallback, const FglTFRuntimeStaticMeshConfig&
+                                             StaticMeshConfig, UStaticMeshComponent* StaticMeshComponent)
 {
 	// first check cache
 	if (CanReadFromCache(StaticMeshConfig.CacheMode) && StaticMeshesCache.Contains(MeshIndex))
 	{
 		UStaticMesh* StaticMesh = StaticMeshesCache[MeshIndex];
-		FGraphEventRef Task = FFunctionGraphTask::CreateAndDispatchWhenReady([StaticMesh, AsyncCallback]()
+		AsyncTask(ENamedThreads::Type::GameThread,[StaticMesh, AsyncCallback, StaticMeshComponent]()
+		{
+			AsyncCallback.ExecuteIfBound(StaticMesh,StaticMeshComponent);
+		});
+		/*FGraphEventRef Task = FFunctionGraphTask::CreateAndDispatchWhenReady([StaticMesh, AsyncCallback]()
 			{
 				AsyncCallback.ExecuteIfBound(StaticMesh);
-			}, TStatId(), nullptr, ENamedThreads::GameThread);
+			}, TStatId(), nullptr, ENamedThreads::GameThread);*/
 		return;
 	}
 
 	TSharedRef<FglTFRuntimeStaticMeshContext, ESPMode::ThreadSafe> StaticMeshContext = MakeShared<FglTFRuntimeStaticMeshContext, ESPMode::ThreadSafe>(AsShared(), MeshIndex, StaticMeshConfig);
 
-	Async(EAsyncExecution::Thread, [this, StaticMeshContext, MeshIndex, AsyncCallback]()
+	Async(EAsyncExecution::Thread, [this, StaticMeshContext, MeshIndex, AsyncCallback, StaticMeshComponent]()
 		{
 			TSharedPtr<FJsonObject> JsonMeshObject = GetJsonObjectFromRootIndex("meshes", MeshIndex);
 			if (JsonMeshObject)
 			{
+				FScopeLock Lock(&StaticMeshParserCriticalSection);
 				FglTFRuntimeMeshLOD* LOD = nullptr;
 				if (LoadMeshIntoMeshLOD(JsonMeshObject.ToSharedRef(), LOD, StaticMeshContext->StaticMeshConfig.MaterialsConfig))
 				{
@@ -90,6 +96,7 @@ void FglTFRuntimeParser::LoadStaticMeshAsync(const int32 MeshIndex, const FglTFR
 				}
 			}
 
+			/*
 			FGraphEventRef Task = FFunctionGraphTask::CreateAndDispatchWhenReady([MeshIndex, StaticMeshContext, AsyncCallback]()
 				{
 					if (StaticMeshContext->StaticMesh)
@@ -112,6 +119,29 @@ void FglTFRuntimeParser::LoadStaticMeshAsync(const int32 MeshIndex, const FglTFR
 #endif
 				}, TStatId(), nullptr, ENamedThreads::GameThread);
 			FTaskGraphInterface::Get().WaitUntilTaskCompletes(Task);
+			*/
+
+			AsyncTask(ENamedThreads::Type::GameThread,[MeshIndex, StaticMeshContext, AsyncCallback, StaticMeshComponent]()
+					{
+						if (StaticMeshContext->StaticMesh)
+						{
+							StaticMeshContext->StaticMesh = StaticMeshContext->Parser->FinalizeStaticMesh(StaticMeshContext);
+						}
+
+						if (StaticMeshContext->StaticMesh)
+						{
+							if (StaticMeshContext->Parser->CanWriteToCache(StaticMeshContext->StaticMeshConfig.CacheMode))
+							{
+								StaticMeshContext->Parser->StaticMeshesCache.Add(MeshIndex, StaticMeshContext->StaticMesh);
+							}
+						}
+
+						AsyncCallback.ExecuteIfBound(StaticMeshContext->StaticMesh,StaticMeshComponent);
+	#if (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2) || ENGINE_MAJOR_VERSION > 5
+						// this is ugly, but we need to avoid at all costs to have the FGCObject dtor to be run out of the game thread
+						StaticMeshContext->UnregisterGCObject();
+	#endif
+					});
 		});
 }
 
@@ -1290,7 +1320,7 @@ void FglTFRuntimeParser::LoadStaticMeshLODsAsync(const TArray<int32>& MeshIndice
 						StaticMeshContext->StaticMesh = StaticMeshContext->Parser->FinalizeStaticMesh(StaticMeshContext);
 					}
 
-					AsyncCallback.ExecuteIfBound(StaticMeshContext->StaticMesh);
+					AsyncCallback.ExecuteIfBound(StaticMeshContext->StaticMesh,nullptr);
 #if (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2) || ENGINE_MAJOR_VERSION > 5
 					// this is ugly, but we need to avoid at all costs to have the FGCObject dtor to be run out of the game thread
 					StaticMeshContext->UnregisterGCObject();
@@ -1585,7 +1615,7 @@ void FglTFRuntimeParser::LoadStaticMeshRecursiveAsync(const FString& NodeName, c
 						StaticMeshContext->StaticMesh = StaticMeshContext->Parser->FinalizeStaticMesh(StaticMeshContext);
 					}
 
-					AsyncCallback.ExecuteIfBound(StaticMeshContext->StaticMesh);
+					AsyncCallback.ExecuteIfBound(StaticMeshContext->StaticMesh,nullptr);
 #if (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2) || ENGINE_MAJOR_VERSION > 5
 					// this is ugly, but we need to avoid at all costs to have the FGCObject dtor to be run out of the game thread
 					StaticMeshContext->UnregisterGCObject();
@@ -1651,7 +1681,7 @@ void FglTFRuntimeParser::LoadStaticMeshFromRuntimeLODsAsync(const TArray<FglTFRu
 						StaticMeshContext->StaticMesh = StaticMeshContext->Parser->FinalizeStaticMesh(StaticMeshContext);
 					}
 
-					AsyncCallback.ExecuteIfBound(StaticMeshContext->StaticMesh);
+					AsyncCallback.ExecuteIfBound(StaticMeshContext->StaticMesh,nullptr);
 #if (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2) || ENGINE_MAJOR_VERSION > 5
 					// this is ugly, but we need to avoid at all costs to have the FGCObject dtor to be run out of the game thread
 					StaticMeshContext->UnregisterGCObject();

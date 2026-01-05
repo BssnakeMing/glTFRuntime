@@ -37,6 +37,3 @@ This is an incomplete list of available plugins:
 * https://github.com/rdeioris/glTFRuntimeConvexCollisions (Support for convex collisions)
 * https://github.com/rdeioris/glTFRuntimeDraco (Draco compression support)
 * https://github.com/rdeioris/glTFRuntimeAudio (Audio file formats support, WAV, Ogg/Opus, Ogg/Vorbis, Mp3)
-* https://github.com/rdeioris/glTFRuntimeGeometryCache (Geometry Cache support)
-* https://github.com/rdeioris/glTFRuntimeAlembic (Alembic files support, includes grooming/hair and geometry cache)
-* https://github.com/rdeioris/glTFRuntimeAvif (Avif textures support)

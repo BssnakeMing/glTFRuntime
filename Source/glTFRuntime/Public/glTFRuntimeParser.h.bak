@@ -782,7 +782,6 @@ struct FglTFRuntimeMaterialsConfig
 		LinesScaleFactor = 1;
 		bAddEpicInterchangeParams = false;
 		bForceEmptyMaterialNameToMaterialIndex = false;
-		bUseSubstrateMaterials = false;
 	}
 };
 
@@ -2341,8 +2340,8 @@ struct FglTFRuntimePluginCacheData
 	bool bValid = false;
 };
 
-DECLARE_DYNAMIC_DELEGATE_TwoParams(FglTFRuntimeStaticMeshAsync, UStaticMesh*, StaticMesh, UStaticMeshComponent*, StaticMeshComponent);
-DECLARE_DYNAMIC_DELEGATE_TwoParams(FglTFRuntimeSkeletalMeshAsync, USkeletalMesh*, SkeletalMesh, USkeletalMeshComponent*, SkeletalMeshComponent);
+DECLARE_DYNAMIC_DELEGATE_OneParam(FglTFRuntimeStaticMeshAsync, UStaticMesh*, StaticMesh);
+DECLARE_DYNAMIC_DELEGATE_OneParam(FglTFRuntimeSkeletalMeshAsync, USkeletalMesh*, SkeletalMesh);
 DECLARE_DYNAMIC_DELEGATE_TwoParams(FglTFRuntimeMeshLODAsync, const bool, bValid, const FglTFRuntimeMeshLOD&, MeshLOD);
 DECLARE_DYNAMIC_DELEGATE_OneParam(FglTFRuntimeTextureCubeAsync, UTextureCube*, TextureCube);
 DECLARE_DYNAMIC_DELEGATE_OneParam(FglTFRuntimeTexture2DAsync, UTexture2D*, Texture);
@@ -2473,8 +2472,8 @@ public:
 
 	FglTFRuntimePoseTracksMap FixupAnimationTracks(const FglTFRuntimePoseTracksMap& Tracks, const TMap<FString, FTransform>& RestTransforms, const FglTFRuntimeSkeletalAnimationConfig& SkeletalAnimationConfig);
 
-	void LoadSkeletalMeshAsync(const int32 MeshIndex, const int32 SkinIndex, const FglTFRuntimeSkeletalMeshAsync& AsyncCallback, const FglTFRuntimeSkeletalMeshConfig& SkeletalMeshConfig, USkeletalMeshComponent* SkeletalMeshComponent);
-	void LoadStaticMeshAsync(const int32 MeshIndex, const FglTFRuntimeStaticMeshAsync& AsyncCallback, const FglTFRuntimeStaticMeshConfig& StaticMeshConfig, UStaticMeshComponent* StaticMeshComponent);
+	void LoadSkeletalMeshAsync(const int32 MeshIndex, const int32 SkinIndex, const FglTFRuntimeSkeletalMeshAsync& AsyncCallback, const FglTFRuntimeSkeletalMeshConfig& SkeletalMeshConfig);
+	void LoadStaticMeshAsync(const int32 MeshIndex, const FglTFRuntimeStaticMeshAsync& AsyncCallback, const FglTFRuntimeStaticMeshConfig& StaticMeshConfig);
 
 	void LoadStaticMeshLODsAsync(const TArray<int32>& MeshIndices, const FglTFRuntimeStaticMeshAsync& AsyncCallback, const FglTFRuntimeStaticMeshConfig& StaticMeshConfig);
 

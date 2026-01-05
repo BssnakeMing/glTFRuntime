@@ -578,11 +578,12 @@ USkeletalMesh* UglTFRuntimeAsset::LoadSkeletalMesh(const int32 MeshIndex, const 
 	return Parser->LoadSkeletalMesh(MeshIndex, SkinIndex, SkeletalMeshConfig);
 }
 
-void UglTFRuntimeAsset::LoadSkeletalMeshAsync(const int32 MeshIndex, const int32 SkinIndex, const FglTFRuntimeSkeletalMeshAsync& AsyncCallback, const FglTFRuntimeSkeletalMeshConfig& SkeletalMeshConfig)
+void UglTFRuntimeAsset::LoadSkeletalMeshAsync(const int32 MeshIndex, const int32 SkinIndex, const FglTFRuntimeSkeletalMeshAsync& AsyncCallback, const
+                                              FglTFRuntimeSkeletalMeshConfig& SkeletalMeshConfig, USkeletalMeshComponent* SkeletalMeshComponent)
 {
 	GLTF_CHECK_PARSER_VOID();
 
-	Parser->LoadSkeletalMeshAsync(MeshIndex, SkinIndex, AsyncCallback, SkeletalMeshConfig);
+	Parser->LoadSkeletalMeshAsync(MeshIndex, SkinIndex, AsyncCallback, SkeletalMeshConfig, SkeletalMeshComponent);
 }
 
 USkeletalMesh* UglTFRuntimeAsset::LoadSkeletalMeshRecursive(const FString& NodeName, const TArray<FString>& ExcludeNodes, const FglTFRuntimeSkeletalMeshConfig& SkeletalMeshConfig, const EglTFRuntimeRecursiveMode TransformApplyRecursiveMode)
@@ -915,11 +916,12 @@ bool UglTFRuntimeAsset::LoadEmitterIntoAudioComponent(const FglTFRuntimeAudioEmi
 	return Parser->LoadEmitterIntoAudioComponent(Emitter, AudioComponent);
 }
 
-void UglTFRuntimeAsset::LoadStaticMeshAsync(const int32 MeshIndex, const FglTFRuntimeStaticMeshAsync& AsyncCallback, const FglTFRuntimeStaticMeshConfig& StaticMeshConfig)
+void UglTFRuntimeAsset::LoadStaticMeshAsync(const int32 MeshIndex, const FglTFRuntimeStaticMeshAsync& AsyncCallback, const FglTFRuntimeStaticMeshConfig&
+                                            StaticMeshConfig, UStaticMeshComponent* StaticMeshComponent)
 {
 	GLTF_CHECK_PARSER_VOID();
 
-	Parser->LoadStaticMeshAsync(MeshIndex, AsyncCallback, StaticMeshConfig);
+	Parser->LoadStaticMeshAsync(MeshIndex, AsyncCallback, StaticMeshConfig, StaticMeshComponent);
 }
 
 void UglTFRuntimeAsset::LoadMeshAsRuntimeLODAsync(const int32 MeshIndex, const FglTFRuntimeMeshLODAsync& AsyncCallback, const FglTFRuntimeMaterialsConfig& MaterialsConfig)
